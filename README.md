@@ -6,7 +6,16 @@
 
 
 ### Deploy it to Glitch
-[https://jet-move.glitch.me/api/whoami](https://jet-move.glitch.me/api/whoami)
+[https://feather-option.glitch.me/new/http://github.com/huynhsamha](https://feather-option.glitch.me/new/http://github.com/huynhsamha)
+
+Response:
+
+[https://feather-option.glitch.me/814522](https://feather-option.glitch.me/814522)
+
+Redirect to:
+
+[https://github.com/huynhsamha](https://github.com/huynhsamha)
+
 
 ### User Story
 + I can pass a URL as a parameter and I will receive a shortened URL in the JSON response.
