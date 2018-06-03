@@ -1,13 +1,19 @@
 const mongoose = require('mongoose');
+const shortid = require('shortid');
 
 const Schema = mongoose.Schema;
 
 const UrlSchema = new Schema({
   original_url: {
-    type: String, default: '', index: true
+    type: String,
+    index: true,
+    unique: true
   },
   short_url: {
-    type: String, default: '', unique: true, index: true
+    type: String,
+    unique: true,
+    index: true,
+    default: shortid.generate
   }
 });
 

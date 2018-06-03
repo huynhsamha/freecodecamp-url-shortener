@@ -1,54 +1,61 @@
 import express from 'express';
-import validator from 'validator';
 import mongoose from 'mongoose';
 import config from '../../config';
+import path from 'path';
+import dns from 'dns';
+import url from 'url';
+import validator from 'validator';
 
 const router = express.Router();
 
+const URL = url.URL;
 const Url = mongoose.model('Url');
 
 router.get('/', (req, res, next) => {
-  res.send('Hello freeCodeCamp challenge!');
+  res.sendFile(path.join(__dirname, '../views/index.html'));
 });
 
 /** handle short url and redirect */
-router.get('/:url', (req, res, next) => {
+router.get('/api/shorturl/:url', (req, res, next) => {
   const { url } = req.params;
   Url.findOne({ short_url: url }).then((url) => {
-    if (!url) return res.send({ error: 'Url is not found on database' });
+    if (!url) { throw new Error('Url is not found on database'); }
     res.redirect(url.original_url);
-  }).catch(err => res.send(err));
+  })
+    .catch(err => res.send({ error: err.message }));
 });
 
-const mapShortenUrl = {};
-const generateShortenUrl = () => {
-  for (;;) {
-    const res = Math.floor(100000 + Math.random() * 999999);
-    if (!mapShortenUrl[res]) { mapShortenUrl[res] = 1; return res; }
-  }
-};
+router.post('/api/shorturl/new', (req, res, next) => {
+  const { url } = req.body;
+  try {
+    if (!validator.isURL(url)) {
+      throw new Error('Invalid URL. Please try another valid');
+    }
+    const objUrl = new URL(url);
+    dns.lookup(objUrl.hostname, (err, address, family) => {
+      if (err) throw err;
+      const original_url = objUrl.href;
 
-/** handle shortening origin url and response */
-router.get('/new/:url*', (req, res, next) => {
-  const original_url = req.url.slice(5); // slice '/new/' to get url
-  if (!validator.isURL(original_url)) {
-    return res.send({ error: 'Url is not valid, please try again with valid url after /new/' });
+      Url.findOne({ original_url }).then((url) => {
+        if (url) return url;
+        return Url.create({ original_url });
+      })
+        .then((url) => {
+          const { original_url, short_url } = url;
+          return res.send({ original_url, short_url: `${config.domain}/api/shorturl/${short_url}` });
+        })
+        .catch((err) => { throw err; });
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.send({ error: err.message });
   }
-  Url.findOne({ original_url }).then((url) => {
-    if (url) return url;
-    const short_url = generateShortenUrl();
-    return Url.create({ original_url, short_url });
-  })
-    .then((url) => {
-      const { original_url, short_url } = url;
-      return res.send({ original_url, short_url: `${config.domain}/${short_url}` });
-    })
-    .catch(err => res.send(err));
 });
 
 /** handle other routes */
 router.get('*', (req, res, next) => {
-  res.send({ error: 'To create shorten url, should format /new/[valid url]' });
+  res.sendFile(path.join(__dirname, '../views/index.html'));
 });
 
 export default router;
